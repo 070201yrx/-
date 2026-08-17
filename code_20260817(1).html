@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我们的情绪小屋</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system}
+body{background:#f7f3f0;color:#333;padding:20px;max-width:600px;margin:0 auto}
+.lock-box{margin-top:120px;background:#fff;padding:32px 24px;border-radius:18px;box-shadow:0 2px 12px #00000010}
+.lock-box h2{text-align:center;margin-bottom:24px;font-weight:500}
+#pwd{width:100%;padding:14px 16px;border:1px solid #ddd;border-radius:12px;font-size:16px;margin-bottom:16px}
+#unlockBtn{width:100%;padding:14px;border:none;border-radius:12px;background:#8c7869;color:#fff;font-size:16px}
+.err{color:#c54444;font-size:14px;margin-top:8px;display:none}
+.main{display:none}
+.title{text-align:center;margin:24px 0}
+textarea{width:100%;min-height:120px;padding:14px;border:1px solid #ddd;border-radius:14px;font-size:16px;resize:none;background:#fff}
+.emoji-row{margin:12px 0;display:flex;gap:8px;flex-wrap:wrap}
+.emoji{padding:8px 12px;background:#fff;border-radius:8px;border:1px solid #ddd;font-size:18px;cursor:pointer}
+.emoji.active{background:#e9e2dd;border-color:#8c7869}
+#save{width:100%;padding:13px;margin:14px 0;border-radius:12px;border:none;background:#8c7869;color:#fff;font-size:16px}
+.item{background:#fff;padding:16px;border-radius:14px;margin-bottom:12px}
+.time{font-size:13px;color:#888;margin-bottom:6px}
+.mood-text{font-size:16px;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<div class="lock-box" id="lockWrap">
+<h2>请输入访问密码</h2>
+<input id="pwd" placeholder="输入密码">
+<div class="err" id="err">密码不正确</div>
+<button id="unlockBtn">进入我们的情绪小屋</button>
+</div>
+
+<div class="main" id="mainWrap">
+<div class="title"><h2>我们的情绪小记</h2></div>
+<textarea id="content" placeholder="写下此刻的情绪、心事……"></textarea>
+<div class="emoji-row">
+<span class="emoji">😔</span>
+<span class="emoji">😊</span>
+<span class="emoji">😌</span>
+<span class="emoji">🥰</span>
+<span class="emoji">😤</span>
+<span class="emoji">🤍</span>
+</div>
+<button id="save">保存这条情绪</button>
+<div id="list"></div>
+</div>
+
+<script>
+const PASSWORD = "070201";
+let selEmoji = "";
+document.querySelectorAll('.emoji').forEach(e=>{
+    e.onclick=()=>{
+        document.querySelectorAll('.emoji').forEach(x=>x.classList.remove('active'))
+        e.classList.add('active'); selEmoji = e.innerText;
+    }
+})
+document.getElementById('unlockBtn').onclick=()=>{
+    const v = document.getElementById('pwd').value.trim();
+    if(v === PASSWORD){
+        document.getElementById('lockWrap').style.display='none';
+        document.getElementById('mainWrap').style.display='block';
+        loadList();
+    }else{
+        document.getElementById('err').style.display='block';
+    }
+}
+function getKey(){
+    return 'mood_journal_2026';
+}
+function getList(){
+    const raw = localStorage.getItem(getKey());
+    return raw ? JSON.parse(raw) : [];
+}
+function saveList(arr){
+    localStorage.setItem(getKey(),JSON.stringify(arr));
+}
+document.getElementById('save').onclick=()=>{
+    const txt = document.getElementById('content').value.trim();
+    if(!txt)return;
+    const arr = getList();
+    arr.unshift({
+        t:new Date().toLocaleString(),
+        e:selEmoji,
+        c:txt
+    })
+    saveList(arr);
+    document.getElementById('content').value='';
+    selEmoji='';
+    document.querySelectorAll('.emoji').forEach(x=>x.classList.remove('active'));
+    loadList();
+}
+function loadList(){
+    const arr = getList();
+    const dom = document.getElementById('list');
+    dom.innerHTML='';
+    arr.forEach(it=>{
+        const div=document.createElement('div');
+        div.className='item';
+        div.innerHTML=`<div class="time">${it.t} ${it.e||""}</div><div class="mood-text">${escapeHtml(it.c)}</div>`;
+        dom.appendChild(div);
+    })
+}
+function escapeHtml(s){
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>
